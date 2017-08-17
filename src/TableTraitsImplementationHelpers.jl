@@ -107,8 +107,8 @@ function _fillcols(x)
         error("Can only collect a NamedTuple iterator.")
     end
 
-    column_types = IterableTables.column_types(iter)
-    column_names = IterableTables.column_names(iter)
+    column_types = TableTraits.column_types(iter)
+    column_names = TableTraits.column_names(iter)
 
     rows = Base.iteratorsize(typeof(iter))==Base.HasLength() ? length(iter) : 0
 
