@@ -1,4 +1,4 @@
-module TableTraitsImplementationHelpers
+module TableTraitsUtils
 
 using TableTraits, NamedTuples, DataValues
 
