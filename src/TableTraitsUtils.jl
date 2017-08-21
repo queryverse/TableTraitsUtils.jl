@@ -2,6 +2,8 @@ module TableTraitsUtils
 
 using TableTraits, NamedTuples, DataValues
 
+export create_tableiterator, create_columns_from_iterabletable
+
 # T is the type of the elements produced
 # TS is a tuple type that stores the columns of the table
 immutable TableIterator{T, TS}
@@ -99,8 +101,16 @@ end
     end
 end
 
-function _fillcols(x)
-    iter = getiterator(x)
+function _default_array_factory(t,rows)
+    if isa(t, TypeVar)
+        return Array{Any}(rows)
+    else
+        return Array{t}(rows)
+    end
+end
+
+function create_columns_from_iterabletable(source; array_factory::Function=_default_array_factory)
+    iter = getiterator(source)
     
     T = eltype(iter)
     if !(T<:NamedTuple)
@@ -114,11 +124,7 @@ function _fillcols(x)
 
     columns = []
     for t in column_types
-        if isa(t, TypeVar)
-            push!(columns, Array{Any}(rows))
-        else
-            push!(columns, Array{t}(rows))
-        end
+        push!(columns, array_factory(t, rows))
     end
 
     if Base.iteratorsize(typeof(iter))==Base.HasLength()

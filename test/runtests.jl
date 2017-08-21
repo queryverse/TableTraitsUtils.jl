@@ -8,7 +8,7 @@ names = [:children, :age, :name]
 
 it = TableTraitsUtils.create_tableiterator(columns, names)
 
-columns2, names2 = TableTraitsUtils._fillcols(it)
+columns2, names2 = TableTraitsUtils.create_columns_from_iterabletable(it)
 
 @test columns[1] == columns2[1]
 @test columns[2] == columns2[2]
