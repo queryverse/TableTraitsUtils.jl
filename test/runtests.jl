@@ -1,6 +1,8 @@
 using TableTraitsUtils
 using Base.Test
 
+include("test_source_without_length.jl")
+
 @testset "TableTraitsUtils" begin
 
 columns = (Int[1,2,3], Float64[1.,2.,3.], String["John", "Sally", "Drew"])
@@ -24,5 +26,22 @@ columns23, names23 = TableTraitsUtils.create_columns_from_iterabletable(it, [2,3
 
 @test names == names2 == names3
 @test names[2:3] == names23
+
+it2 = TestSourceWithoutLength()
+
+columns4, names4 = TableTraitsUtils.create_columns_from_iterabletable(it2)
+@test columns4[1] == [1,2]
+@test columns4[2] == [1.,2.]
+@test names4 == [:a, :b]
+
+columns5, names5 = TableTraitsUtils.create_columns_from_iterabletable(it2, :all)
+@test columns5[1] == [1,2]
+@test columns5[2] == [1.,2.]
+@test names5 == [:a, :b]
+
+columns6, names6 = TableTraitsUtils.create_columns_from_iterabletable(it2, [2])
+@test columns6[1] == [1.,2.]
+@test names6 == [:b]
+
 
 end
