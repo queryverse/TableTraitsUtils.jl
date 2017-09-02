@@ -72,11 +72,10 @@ end
 # Sink
 
 @generated function _fill_cols_without_length(columns, enumerable)
-    n = length(columns.types)
     push_exprs = Expr(:block)
-    for i in 1:n
+    for i in find(collect(columns.types) .!= Void)
         ex = :( push!(columns[$i], i[$i]) )
-        push!(push_exprs.args, ex)        
+        push!(push_exprs.args, ex)
     end
 
     quote
@@ -87,9 +86,8 @@ end
 end
 
 @generated function _fill_cols_with_length(columns, enumerable)
-    n = length(columns.types)
     push_exprs = Expr(:block)
-    for col_idx in 1:n
+    for col_idx in find(collect(columns.types) .!= Void)
         ex = :( columns[$col_idx][i] = v[$col_idx] )
         push!(push_exprs.args, ex)
     end
@@ -109,9 +107,9 @@ function _default_array_factory(t,rows)
     end
 end
 
-function create_columns_from_iterabletable(source; array_factory::Function=_default_array_factory)
+function create_columns_from_iterabletable(source, sel_cols = :all; array_factory::Function=_default_array_factory)
     iter = getiterator(source)
-    
+
     T = eltype(iter)
     if !(T<:NamedTuple)
         error("Can only collect a NamedTuple iterator.")
@@ -123,8 +121,12 @@ function create_columns_from_iterabletable(source; array_factory::Function=_defa
     rows = Base.iteratorsize(typeof(iter))==Base.HasLength() ? length(iter) : 0
 
     columns = []
-    for t in column_types
-        push!(columns, array_factory(t, rows))
+    for (i, t) in enumerate(column_types)
+        if sel_cols == :all || i in sel_cols
+            push!(columns, array_factory(t, rows))
+        else
+            push!(columns, nothing)
+        end
     end
 
     if Base.iteratorsize(typeof(iter))==Base.HasLength()
@@ -133,7 +135,11 @@ function create_columns_from_iterabletable(source; array_factory::Function=_defa
         _fill_cols_without_length((columns...), iter)
     end
 
-    return columns, column_names
+    if sel_cols == :all
+        return columns, column_names
+    else
+        return columns[sel_cols], column_names[sel_cols]
+    end
 end
 
 end # module
