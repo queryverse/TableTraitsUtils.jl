@@ -50,7 +50,7 @@ end
 @generated function Base.next{T,TS}(iter::TableIterator{T,TS}, state)
     constructor_call = Expr(:call, :($T))
     for (i,t) in enumerate(T.parameters)
-        if iter.parameters[1].parameters[i] <: DataValue
+        if eltype(iter.parameters[2].parameters[i]) <: Nullable
             push!(constructor_call.args, :(DataValue(columns[$i][i])))
         else
             push!(constructor_call.args, :(columns[$i][i]))
