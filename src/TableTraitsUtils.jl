@@ -6,7 +6,7 @@ export create_tableiterator, create_columns_from_iterabletable
 
 # T is the type of the elements produced
 # TS is a tuple type that stores the columns of the table
-immutable TableIterator{T, TS}
+struct TableIterator{T, TS}
     columns::TS
 end
 
@@ -35,19 +35,19 @@ function create_tableiterator(columns, names::Vector{Symbol})
     return e_df
 end
 
-function Base.length{T,TS}(iter::TableIterator{T,TS})
+function Base.length(iter::TableIterator{T,TS}) where {T,TS}
     return length(iter.columns[1])
 end
 
-function Base.eltype{T,TS}(iter::TableIterator{T,TS})
+function Base.eltype(iter::TableIterator{T,TS}) where {T,TS}
     return T
 end
 
-function Base.start{T,TS}(iter::TableIterator{T,TS})
+function Base.start(iter::TableIterator{T,TS}) where {T,TS}
     return 1
 end
 
-@generated function Base.next{T,TS}(iter::TableIterator{T,TS}, state)
+@generated function Base.next(iter::TableIterator{T,TS}, state) where {T,TS}
     constructor_call = Expr(:call, :($T))
     for (i,t) in enumerate(T.parameters)
         if eltype(iter.parameters[2].parameters[i]) <: Nullable
@@ -65,7 +65,7 @@ end
     end
 end
 
-function Base.done{T,TS}(iter::TableIterator{T,TS}, state)
+function Base.done(iter::TableIterator{T,TS}, state) where {T,TS}
     return state>length(iter.columns[1])
 end
 

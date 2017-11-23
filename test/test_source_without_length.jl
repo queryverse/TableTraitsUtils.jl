@@ -7,7 +7,7 @@ function Base.eltype(iter::TestSourceWithoutLength)
     return @NT(a::Int, b::Float64)
 end
 
-Base.iteratorsize{T<:TestSourceWithoutLength}(::Type{T}) = Base.SizeUnknown()
+Base.iteratorsize(::Type{T}) where {T <: TestSourceWithoutLength} = Base.SizeUnknown()
 
 function Base.start(iter::TestSourceWithoutLength)
     return 1
