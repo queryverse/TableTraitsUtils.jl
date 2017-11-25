@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.1.2 Release Notes
+* Enable precompile
+
 # TableTraitsUtils.jl v0.1.1 Release Notes
 * Fix a bug in the TableIterator when the source used DataValues for missing data
 
