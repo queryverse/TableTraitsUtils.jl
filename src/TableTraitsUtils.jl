@@ -1,3 +1,4 @@
+__precompile__()
 module TableTraitsUtils
 
 using TableTraits, NamedTuples, DataValues
