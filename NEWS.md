@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.1.3 Release Notes
+* Add missing eltype method
+
 # TableTraitsUtils.jl v0.1.2 Release Notes
 * Enable precompile
 
