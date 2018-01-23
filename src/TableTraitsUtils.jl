@@ -110,39 +110,46 @@ function _default_array_factory(t,rows)
     end
 end
 
-function create_columns_from_iterabletable(source, sel_cols = :all; array_factory::Function=_default_array_factory)
-    iter = getiterator(source)
+function create_columns_from_iterabletable(source, sel_cols = :all; array_factory::Function=_default_array_factory, array_conversion::Union{Function,Void}=nothing)
+    if array_conversion!=nothing && supports_get_columns_copy(source)
+        data = get_columns_copy(source)
 
-    T = eltype(iter)
-    if !(T<:NamedTuple)
-        error("Can only collect a NamedTuple iterator.")
-    end
-
-    column_types = TableTraits.column_types(iter)
-    column_names = TableTraits.column_names(iter)
-
-    rows = Base.iteratorsize(typeof(iter))==Base.HasLength() ? length(iter) : 0
-
-    columns = []
-    for (i, t) in enumerate(column_types)
-        if sel_cols == :all || i in sel_cols
-            push!(columns, array_factory(t, rows))
-        else
-            push!(columns, nothing)
-        end
-    end
-
-    if Base.iteratorsize(typeof(iter))==Base.HasLength()
-        _fill_cols_with_length((columns...), iter)
+        columns = [array_conversion(data[i]) for i in 1:length(data)]
+        column_names = fieldnames(data)
     else
-        _fill_cols_without_length((columns...), iter)
+        iter = getiterator(source)
+
+        T = eltype(iter)
+        if !(T<:NamedTuple)
+            error("Can only collect a NamedTuple iterator.")
+        end
+
+        column_types = TableTraits.column_types(iter)
+        column_names = TableTraits.column_names(iter)
+
+        rows = Base.iteratorsize(typeof(iter))==Base.HasLength() ? length(iter) : 0
+
+        columns = []
+        for (i, t) in enumerate(column_types)
+            if sel_cols == :all || i in sel_cols
+                push!(columns, array_factory(t, rows))
+            else
+                push!(columns, nothing)
+            end
+        end
+
+        if Base.iteratorsize(typeof(iter))==Base.HasLength()
+            _fill_cols_with_length((columns...), iter)
+        else
+            _fill_cols_without_length((columns...), iter)
+        end
     end
 
     if sel_cols == :all
         return columns, column_names
     else
         return columns[sel_cols], column_names[sel_cols]
-    end
+    end    
 end
 
 end # module
