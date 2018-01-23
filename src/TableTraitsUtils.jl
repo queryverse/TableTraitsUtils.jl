@@ -110,11 +110,11 @@ function _default_array_factory(t,rows)
     end
 end
 
-function create_columns_from_iterabletable(source, sel_cols = :all; array_factory::Function=_default_array_factory)
-    if supports_get_columns_copy(source)
+function create_columns_from_iterabletable(source, sel_cols = :all; array_factory::Function=_default_array_factory, array_conversion::Union{Function,Void}=nothing)
+    if array_conversion!=nothing && supports_get_columns_copy(source)
         data = get_columns_copy(source)
 
-        columns = [data[i] for i in 1:length(data)]
+        columns = [array_conversion(data[i]) for i in 1:length(data)]
         column_names = fieldnames(data)
     else
         iter = getiterator(source)
