@@ -52,14 +52,15 @@ end
 
 @generated function Base.next(iter::TableIterator{T,TS}, state) where {T,TS}
     constructor_call = Expr(:call, :($T))
+    args = []
     for (i,t) in enumerate(T.parameters)
         if eltype(iter.parameters[2].parameters[i]) <: Nullable
-            push!(constructor_call.args, :(DataValue(columns[$i][i])))
+            push!(args, :(DataValue(columns[$i][i])))
         else
-            push!(constructor_call.args, :(columns[$i][i]))
+            push!(args, :(columns[$i][i]))
         end
     end
-
+    push!(constructor_call.args, Expr(:tuple, args...))
     quote
         i = state
         columns = iter.columns
