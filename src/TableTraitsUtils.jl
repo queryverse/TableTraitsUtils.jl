@@ -37,7 +37,6 @@ Base.eltype(::Type{TableIterator{T,TS}}) where {T,TS} = T
             return :(iter.columns[$i][state])
         end
     end
-    # [:(iter.columns[$i][state]) for i in 1:length(TS.parameters)]
     return quote
         if state > length(iter)
             return nothing
