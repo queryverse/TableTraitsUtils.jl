@@ -1,7 +1,7 @@
 __precompile__()
 module TableTraitsUtils
 
-using TableTraits, NamedTuples, DataValues
+using IteratorInterfaceExtensions, TableTraits, DataValues, Missings
 
 export create_tableiterator, create_columns_from_iterabletable
 
@@ -12,71 +12,46 @@ struct TableIterator{T, TS}
 end
 
 function create_tableiterator(columns, names::Vector{Symbol})
-    col_expressions = Array{Expr,1}()
-    df_columns_tuple_type = Expr(:curly, :Tuple)
-    for i in 1:length(columns)
-        etype = eltype(columns[i])
-        if etype <: Nullable
-            push!(col_expressions, Expr(:(::), names[i], DataValue{etype.parameters[1]}))
+    field_types = Type[]
+    for i in eltype.(columns)
+        if i >: Missing
+            push!(field_types, DataValue{Missings.T(i)})
         else
-            push!(col_expressions, Expr(:(::), names[i], etype))
+            push!(field_types, i)
         end
-        push!(df_columns_tuple_type.args, typeof(columns[i]))
     end
-    t_expr = NamedTuples.make_tuple(col_expressions)
-
-    t2 = :(TableIterator{Float64,Float64})
-    t2.args[2] = t_expr
-    t2.args[3] = df_columns_tuple_type
-
-    t = eval(t2)
-
-    e_df = t((columns...))
-
-    return e_df
+    return TableIterator{NamedTuple{(names...,), Tuple{field_types...}}, Tuple{typeof.(columns)...}}((columns...,))
 end
 
 function Base.length(iter::TableIterator{T,TS}) where {T,TS}
     return length(iter.columns[1])
 end
 
-function Base.eltype(iter::TableIterator{T,TS}) where {T,TS}
-    return T
-end
-
 Base.eltype(::Type{TableIterator{T,TS}}) where {T,TS} = T
 
-function Base.start(iter::TableIterator{T,TS}) where {T,TS}
-    return 1
-end
-
-@generated function Base.next(iter::TableIterator{T,TS}, state) where {T,TS}
-    constructor_call = Expr(:call, :($T))
-    for (i,t) in enumerate(T.parameters)
-        if eltype(iter.parameters[2].parameters[i]) <: Nullable
-            push!(constructor_call.args, :(DataValue(columns[$i][i])))
+@generated function Base.iterate(iter::TableIterator{T,TS}, state=1) where {T,TS}
+    columns = map(1:length(TS.parameters)) do i
+        if fieldtype(T,i) <: DataValue && eltype(TS.parameters[i]) >: Missing
+            return :($(fieldtype(T,i))(iter.columns[$i][state]))
         else
-            push!(constructor_call.args, :(columns[$i][i]))
+            return :(iter.columns[$i][state])
         end
     end
-
-    quote
-        i = state
-        columns = iter.columns
-        a = $constructor_call
-        return a, state+1
+    # [:(iter.columns[$i][state]) for i in 1:length(TS.parameters)]
+    return quote
+        if state > length(iter)
+            return nothing
+        else            
+            return $(T)(($(columns...),)), state+1
+        end
     end
-end
-
-function Base.done(iter::TableIterator{T,TS}, state) where {T,TS}
-    return state>length(iter.columns[1])
 end
 
 # Sink
 
 @generated function _fill_cols_without_length(columns, enumerable)
     push_exprs = Expr(:block)
-    for i in find(collect(columns.types) .!= Void)
+    for i in findall(collect(columns.types) .!= Nothing)
         ex = :( push!(columns[$i], i[$i]) )
         push!(push_exprs.args, ex)
     end
@@ -90,7 +65,7 @@ end
 
 @generated function _fill_cols_with_length(columns, enumerable)
     push_exprs = Expr(:block)
-    for col_idx in find(collect(columns.types) .!= Void)
+    for col_idx in findall(collect(columns.types) .!= Nothing)
         ex = :( columns[$col_idx][i] = v[$col_idx] )
         push!(push_exprs.args, ex)
     end
@@ -104,13 +79,13 @@ end
 
 function _default_array_factory(t,rows)
     if isa(t, TypeVar)
-        return Array{Any}(rows)
+        return Array{Any}(undef, rows)
     else
-        return Array{t}(rows)
+        return Array{t}(undef, rows)
     end
 end
 
-function create_columns_from_iterabletable(source, sel_cols = :all; array_factory::Function=_default_array_factory)
+function create_columns_from_iterabletable(source; sel_cols=:all, array_factory=_default_array_factory)
     iter = getiterator(source)
 
     T = eltype(iter)
@@ -118,10 +93,10 @@ function create_columns_from_iterabletable(source, sel_cols = :all; array_factor
         error("Can only collect a NamedTuple iterator.")
     end
 
-    column_types = TableTraits.column_types(iter)
-    column_names = TableTraits.column_names(iter)
+    column_types = collect(T.parameters[2].parameters)
+    column_names = collect(T.parameters[1])
 
-    rows = Base.iteratorsize(typeof(iter))==Base.HasLength() ? length(iter) : 0
+    rows = Base.IteratorSize(typeof(iter))==Base.HasLength() ? length(iter) : 0
 
     columns = []
     for (i, t) in enumerate(column_types)
@@ -132,10 +107,10 @@ function create_columns_from_iterabletable(source, sel_cols = :all; array_factor
         end
     end
 
-    if Base.iteratorsize(typeof(iter))==Base.HasLength()
-        _fill_cols_with_length((columns...), iter)
+    if Base.IteratorSize(typeof(iter))==Base.HasLength()
+        _fill_cols_with_length((columns...,), iter)
     else
-        _fill_cols_without_length((columns...), iter)
+        _fill_cols_without_length((columns...,), iter)
     end
 
     if sel_cols == :all

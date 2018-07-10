@@ -1,6 +1,6 @@
 using TableTraitsUtils
 using DataValues
-using Base.Test
+using Test
 
 include("test_source_without_length.jl")
 
@@ -13,9 +13,9 @@ it = TableTraitsUtils.create_tableiterator(columns, names)
 
 columns2, names2 = TableTraitsUtils.create_columns_from_iterabletable(it)
 
-columns3, names3 = TableTraitsUtils.create_columns_from_iterabletable(it, :all)
+columns3, names3 = TableTraitsUtils.create_columns_from_iterabletable(it, sel_cols=:all)
 
-columns23, names23 = TableTraitsUtils.create_columns_from_iterabletable(it, [2,3])
+columns23, names23 = TableTraitsUtils.create_columns_from_iterabletable(it, sel_cols=[2,3])
 
 @test columns[1] == columns2[1] == columns3[1]
 @test columns[2] == columns2[2] == columns3[2]
@@ -35,16 +35,16 @@ columns4, names4 = TableTraitsUtils.create_columns_from_iterabletable(it2)
 @test columns4[2] == [1.,2.]
 @test names4 == [:a, :b]
 
-columns5, names5 = TableTraitsUtils.create_columns_from_iterabletable(it2, :all)
+columns5, names5 = TableTraitsUtils.create_columns_from_iterabletable(it2, sel_cols=:all)
 @test columns5[1] == [1,2]
 @test columns5[2] == [1.,2.]
 @test names5 == [:a, :b]
 
-columns6, names6 = TableTraitsUtils.create_columns_from_iterabletable(it2, [2])
+columns6, names6 = TableTraitsUtils.create_columns_from_iterabletable(it2, sel_cols=[2])
 @test columns6[1] == [1.,2.]
 @test names6 == [:b]
 
-columns_with_nulls = (Nullable{Int}[Nullable(3), Nullable(2), Nullable{Int}()], [2.,5.,9.], Nullable{String}[Nullable("a"), Nullable{String}(), Nullable("b")])
+columns_with_nulls = (Union{Int,Missing}[3, 2, missing], Float64[2.,5.,9.], Union{String,Missing}["a", missing, "b"])
 it3 = TableTraitsUtils.create_tableiterator(columns_with_nulls, names)
 
 columns7, names7 = TableTraitsUtils.create_columns_from_iterabletable(it3)
