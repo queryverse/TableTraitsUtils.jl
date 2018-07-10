@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.2.0 Release Notes
+* Drop julia 0.6 support, add julia 0.7 support
+
 # TableTraitsUtils.jl v0.1.3 Release Notes
 * Add missing eltype method
 
