@@ -76,20 +76,24 @@ end
     end
 end
 
-function _default_array_factory(t,rows)
-    if isa(t, TypeVar)
-        return Array{Any}(undef, rows)
-    else
-        return Array{t}(undef, rows)
-    end
-end
-
-function create_columns_from_iterabletable(source; sel_cols=:all, array_factory=_default_array_factory)
+function create_columns_from_iterabletable(source; sel_cols=:all, na_representation=:datavalue)
     iter = getiterator(source)
 
     T = eltype(iter)
     if !(T<:NamedTuple)
         error("Can only collect a NamedTuple iterator.")
+    end
+
+    array_factory = if na_representation==:datavalue
+        (t,rows) -> Array{t}(undef, rows)
+    elseif na_representation==:missing
+        (t,rows) -> begin
+            if t <: DataValue
+                return Array{Union{eltype(t),Missing}}(undef, rows)
+            else
+                return Array{t}(undef, rows)
+            end
+        end
     end
 
     column_types = collect(T.parameters[2].parameters)
