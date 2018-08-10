@@ -1,4 +1,3 @@
-__precompile__()
 module TableTraitsUtils
 
 using IteratorInterfaceExtensions, TableTraits, DataValues, Missings
