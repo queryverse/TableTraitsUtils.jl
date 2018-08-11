@@ -23,7 +23,7 @@ function create_tableiterator(columns, names::Vector{Symbol})
 end
 
 function Base.length(iter::TableIterator{T,TS}) where {T,TS}
-    return length(iter.columns[1])
+    return length(iter.columns)==0 ? 0 : length(iter.columns[1])
 end
 
 Base.eltype(::Type{TableIterator{T,TS}}) where {T,TS} = T

@@ -66,4 +66,9 @@ columns8, names8 = TableTraitsUtils.create_columns_from_iterabletable(it4)
 @test length(columns8) == 3
 @test names8 == names
 
+it = TableTraitsUtils.create_tableiterator(Any[], Symbol[])
+
+@test length(it)==0
+@test iterate(it)===nothing
+
 end
