@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.2.2 Release Notes
+* Add a missing convert method
+
 # TableTraitsUtils.jl v0.2.1 Release Notes
 * Drop precompile statement
 
