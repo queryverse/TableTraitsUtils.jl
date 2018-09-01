@@ -6,6 +6,21 @@ include("test_source_without_length.jl")
 
 @testset "TableTraitsUtils" begin
 
+@test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable(nothing)
+@test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable(nothing, errorhandling=:error)
+@test TableTraitsUtils.create_columns_from_iterabletable(nothing, errorhandling=:returnvalue)===nothing
+
+@test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable([1,2,3])
+@test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable([1,2,3], errorhandling=:error)
+@test TableTraitsUtils.create_columns_from_iterabletable([1,2,3], errorhandling=:returnvalue)===nothing
+
+@test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable(Iterators.filter(i->true, [1,2,3]))
+@test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable(Iterators.filter(i->true, [1,2,3]), errorhandling=:error)
+@test TableTraitsUtils.create_columns_from_iterabletable(Iterators.filter(i->true, [1,2,3]), errorhandling=:returnvalue)===nothing
+
+@test create_columns_from_iterabletable(NamedTuple{(:a,:b),Tuple{Int,String}}[]) == (a=Int[], b=String[])
+@test create_columns_from_iterabletable((i for i in NamedTuple{(:a,:b),Tuple{Int,String}}[])) == (a=Int[], b=String[])
+
 columns = (Int[1,2,3], Float64[1.,2.,3.], String["John", "Sally", "Drew"])
 names = [:children, :age, :name]
 

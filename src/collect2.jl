@@ -37,12 +37,12 @@ function collect_empty_columns(itr::T, ::Base.EltypeUnknown, array_factory, sel_
             return nothing
         end
     end
-    return getdest(S,0, array_factory)
+    return getdest(S,0, array_factory, sel_cols)
 end
 
 function collect_empty_columns(itr::T, ::Base.HasEltype, array_factory, sel_cols, errorhandling) where {T}
     if eltype(itr) <: NamedTuple
-        return getdest(eltype(itr),0, array_factory)
+        return getdest(eltype(itr),0, array_factory, sel_cols)
     else
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
@@ -86,7 +86,7 @@ end
 
 function _collect_columns(itr, ::Union{Base.HasShape, Base.HasLength}, array_factory, sel_cols, errorhandling)
     y = iterate(itr)
-    y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory)
+    y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory, sel_cols, errorhandling)
 
     if !(typeof(y[1])<:NamedTuple)
         if errorhandling==:error
@@ -123,7 +123,7 @@ end
 
 function _collect_columns(itr, ::Base.SizeUnknown, array_factory, sel_cols, errorhandling)
     y = iterate(itr)
-    y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory)
+    y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory, sel_cols, errorhandling)
     
     if !(typeof(y[1])<:NamedTuple)
         if errorhandling==:error
