@@ -1,7 +1,14 @@
 # Main entry point
-function create_columns_from_iterabletable(itr; sel_cols=:all, na_representation=:datavalue)
+function create_columns_from_iterabletable(itr; sel_cols=:all, na_representation=:datavalue, errorhandling=:error)
+    in(errorhandling, (:error, :returnvalue)) || throw(ArgumentError("'$errorhandling' is not a valid argument for errorhandling."))
+    in(na_representation, (:datavalue, :missing)) || throw(ArgumentError("'$na_representation' is not a valid argument for na_representation."))
+
     if TableTraits.isiterabletable(itr)===false
-        return nothing
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
     else
 
         array_factory = if na_representation==:datavalue
@@ -17,19 +24,32 @@ function create_columns_from_iterabletable(itr; sel_cols=:all, na_representation
             end
 
         itr2 = IteratorInterfaceExtensions.getiterator(itr)
-        return _collect_columns(itr2, Base.IteratorSize(itr2), array_factory, sel_cols)
+        return _collect_columns(itr2, Base.IteratorSize(itr2), array_factory, sel_cols, errorhandling)
     end
 end
 
-function collect_empty_columns(itr::T, ::Base.EltypeUnknown, array_factory, sel_cols) where {T}
+function collect_empty_columns(itr::T, ::Base.EltypeUnknown, array_factory, sel_cols, errorhandling) where {T}
     S = Core.Compiler.return_type(first, Tuple{T})
-    S == Union{} && return nothing
-    S <: NamedTuple || return nothing
+    if S == Union{} || !(S <: NamedTuple)
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
     return getdest(S,0, array_factory)
 end
 
-function collect_empty_columns(itr::T, ::Base.HasEltype, array_factory, sel_cols) where {T}
-    return getdest(eltype(itr),0, array_factory)
+function collect_empty_columns(itr::T, ::Base.HasEltype, array_factory, sel_cols, errorhandling) where {T}
+    if eltype(itr) <: NamedTuple
+        return getdest(eltype(itr),0, array_factory)
+    else
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
 end
 
 function getdest(T, n, array_factory, sel_cols)
@@ -64,20 +84,26 @@ end
     return push_exprs
 end
 
-function _collect_columns(itr, ::Union{Base.HasShape, Base.HasLength}, array_factory, sel_cols)
+function _collect_columns(itr, ::Union{Base.HasShape, Base.HasLength}, array_factory, sel_cols, errorhandling)
     y = iterate(itr)
     y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory)
 
-    typeof(y[1])<:NamedTuple || return nothing
+    if !(typeof(y[1])<:NamedTuple)
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
 
     dest = getdest(typeof(y[1]), length(itr), array_factory, sel_cols)
 
     _setrow(dest,1,y[1])
 
-    _collect_to_columns!(dest, itr, 2, y[2], sel_cols)
+    _collect_to_columns!(dest, itr, 2, y[2], sel_cols, errorhandling)
 end
 
-function _collect_to_columns!(dest::T, itr, offs, st, sel_cols) where {T<:NamedTuple}
+function _collect_to_columns!(dest::T, itr, offs, st, sel_cols, errorhandling) where {T<:NamedTuple}
     i = offs
     y = iterate(itr,st)
     while y!==nothing
@@ -95,20 +121,26 @@ function _collect_to_columns!(dest::T, itr, offs, st, sel_cols) where {T<:NamedT
     end
 end
 
-function _collect_columns(itr, ::Base.SizeUnknown, array_factory, sel_cols)
+function _collect_columns(itr, ::Base.SizeUnknown, array_factory, sel_cols, errorhandling)
     y = iterate(itr)
     y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory)
     
-    typeof(y[1])<:NamedTuple || return nothing
+    if !(typeof(y[1])<:NamedTuple)
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
 
     dest = getdest(typeof(y[1]), 1, array_factory, sel_cols)
     
     _setrow(dest,1,y[1])
 
-    _grow_to_columns!(dest, itr, y[2], sel_cols)
+    _grow_to_columns!(dest, itr, y[2], sel_cols, errorhandling)
 end
 
-function _grow_to_columns!(dest::T, itr, st, sel_cols) where {T<:NamedTuple}
+function _grow_to_columns!(dest::T, itr, st, sel_cols, errorhandling) where {T<:NamedTuple}
     y = iterate(itr, st)
     while y!==nothing
         _pushrow(dest, y[1])
