@@ -21,6 +21,13 @@ include("test_source_without_length.jl")
 @test create_columns_from_iterabletable(NamedTuple{(:a,:b),Tuple{Int,String}}[]) == (a=Int[], b=String[])
 @test create_columns_from_iterabletable((i for i in NamedTuple{(:a,:b),Tuple{Int,String}}[])) == (a=Int[], b=String[])
 
+@test_throws ArgumentError create_columns_from_iterabletable(Int[])
+@test_throws ArgumentError create_columns_from_iterabletable(Int[], errorhandling=:error)
+@test create_columns_from_iterabletable(Int[], errorhandling=:returnvalue) === nothing
+@test_throws ArgumentError create_columns_from_iterabletable((i for i in Int[]))
+@test_throws ArgumentError create_columns_from_iterabletable((i for i in Int[]), errorhandling=:error)
+@test create_columns_from_iterabletable((i for i in Int[]), errorhandling=:returnvalue) === nothing
+
 columns = (Int[1,2,3], Float64[1.,2.,3.], String["John", "Sally", "Drew"])
 names = [:children, :age, :name]
 
