@@ -45,6 +45,6 @@ Base.eltype(::Type{TableIterator{T,TS}}) where {T,TS} = T
     end
 end
 
-include("collect2.jl")
+include("collect1.jl")
 
 end # module
