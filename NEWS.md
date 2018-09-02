@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.3.0 Release Notes
+* Support unkonwn eltype sources
+
 # TableTraitsUtils.jl v0.2.1 Release Notes
 * Drop precompile statement
 
