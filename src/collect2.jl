@@ -113,11 +113,11 @@ function _collect_to_columns!(dest::T, itr, offs, st, sel_cols, errorhandling) w
     end
 
     if sel_cols==:all
-        return values(dest), collect(keys(dest))
+        return collect(values(dest)), collect(keys(dest))
     else
         names_to_use = tuple((fieldname(T,i) for i in sel_cols)...)
         r = NamedTuple{names_to_use}(dest)
-        return values(r), collect(keys(r))
+        return collect(values(r)), collect(keys(r))
     end
 end
 
@@ -148,10 +148,10 @@ function _grow_to_columns!(dest::T, itr, st, sel_cols, errorhandling) where {T<:
     end
 
     if sel_cols==:all
-        return values(dest), collect(keys(dest))
+        return collect(values(dest)), collect(keys(dest))
     else
         names_to_use = tuple((fieldname(T,i) for i in sel_cols)...)
         r = NamedTuple{names_to_use}(dest)
-        return values(r), collect(keys(r))
+        return collect(values(r)), collect(keys(r))
     end
 end
