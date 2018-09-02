@@ -1,74 +1,157 @@
-@generated function _fill_cols_without_length(columns, enumerable)
-    push_exprs = Expr(:block)
-    for i in findall(collect(columns.types) .!= Nothing)
-        ex = :( push!(columns[$i], i[$i]) )
-        push!(push_exprs.args, ex)
-    end
+# Main entry point
+function create_columns_from_iterabletable(itr; sel_cols=:all, na_representation=:datavalue, errorhandling=:error)
+    in(errorhandling, (:error, :returnvalue)) || throw(ArgumentError("'$errorhandling' is not a valid argument for errorhandling."))
+    in(na_representation, (:datavalue, :missing)) || throw(ArgumentError("'$na_representation' is not a valid argument for na_representation."))
 
-    quote
-        for i in enumerable
-            $push_exprs
+    if TableTraits.isiterabletable(itr)===false
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
         end
-    end
-end
+    else
 
-@generated function _fill_cols_with_length(columns, enumerable)
-    push_exprs = Expr(:block)
-    for col_idx in findall(collect(columns.types) .!= Nothing)
-        ex = :( columns[$col_idx][i] = v[$col_idx] )
-        push!(push_exprs.args, ex)
-    end
-
-    quote
-        for (i,v) in enumerate(enumerable)
-            $push_exprs
-        end
-    end
-end
-
-function create_columns_from_iterabletable(source; sel_cols=:all, na_representation=:datavalue)
-    iter = getiterator(source)
-
-    T = eltype(iter)
-    if !(T<:NamedTuple)
-        error("Can only collect a NamedTuple iterator.")
-    end
-
-    array_factory = if na_representation==:datavalue
-        (t,rows) -> Array{t}(undef, rows)
-    elseif na_representation==:missing
-        (t,rows) -> begin
-            if t <: DataValue
-                return Array{Union{eltype(t),Missing}}(undef, rows)
-            else
-                return Array{t}(undef, rows)
+        array_factory = if na_representation==:datavalue
+                (t,rows) -> Array{t}(undef, rows)
+            elseif na_representation==:missing
+                (t,rows) -> begin
+                    if t <: DataValue
+                        return Array{Union{eltype(t),Missing}}(undef, rows)
+                    else
+                        return Array{t}(undef, rows)
+                    end
+                end
             end
+
+        itr2 = IteratorInterfaceExtensions.getiterator(itr)
+        return _collect_columns(itr2, Base.IteratorSize(itr2), array_factory, sel_cols, errorhandling)
+    end
+end
+
+function collect_empty_columns(itr::T, ::Base.EltypeUnknown, array_factory, sel_cols, errorhandling) where {T}
+    S = Core.Compiler.return_type(first, Tuple{T})
+    if S == Union{} || !(S <: NamedTuple)
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
+    return getdest(S,0, array_factory, sel_cols)
+end
+
+function collect_empty_columns(itr::T, ::Base.HasEltype, array_factory, sel_cols, errorhandling) where {T}
+    if eltype(itr) <: NamedTuple
+        return getdest(eltype(itr),0, array_factory, sel_cols)
+    else
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
+end
+
+function getdest(T, n, array_factory, sel_cols)
+    if sel_cols==:all
+        return NamedTuple{fieldnames(T)}(tuple((array_factory(fieldtype(T,i),n) for i in 1:length(fieldnames(T)))...))
+    else
+        return NamedTuple{fieldnames(T)}(tuple((i in sel_cols ? array_factory(fieldtype(T,i),n) : nothing for i in 1:length(fieldnames(T)))...))
+    end
+end
+
+@generated function _setrow(dest::NamedTuple{NAMES,TYPES}, i, el::T) where {T,NAMES,TYPES}
+    push_exprs = Expr(:block)
+    for col_idx in 1:length(fieldnames(T))
+        if fieldtype(TYPES, col_idx)!==Nothing
+            ex = :( dest[$col_idx][i] = el[$col_idx] )
+            push!(push_exprs.args, ex)
         end
     end
 
-    column_types = collect(T.parameters[2].parameters)
-    column_names = collect(T.parameters[1])
+    return push_exprs
+end
 
-    rows = Base.IteratorSize(typeof(iter))==Base.HasLength() ? length(iter) : 0
-
-    columns = []
-    for (i, t) in enumerate(column_types)
-        if sel_cols == :all || i in sel_cols
-            push!(columns, array_factory(t, rows))
-        else
-            push!(columns, nothing)
+@generated function _pushrow(dest::NamedTuple{NAMES,TYPES}, el::T) where {T,NAMES,TYPES}
+    push_exprs = Expr(:block)
+    for col_idx in 1:length(fieldnames(T))
+        if fieldtype(TYPES, col_idx)!==Nothing
+            ex = :( push!(dest[$col_idx], el[$col_idx]) )
+            push!(push_exprs.args, ex)
         end
     end
 
-    if Base.IteratorSize(typeof(iter))==Base.HasLength()
-        _fill_cols_with_length((columns...,), iter)
-    else
-        _fill_cols_without_length((columns...,), iter)
+    return push_exprs
+end
+
+function _collect_columns(itr, ::Union{Base.HasShape, Base.HasLength}, array_factory, sel_cols, errorhandling)
+    y = iterate(itr)
+    y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory, sel_cols, errorhandling)
+
+    if !(typeof(y[1])<:NamedTuple)
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
     end
 
-    if sel_cols == :all
-        return columns, column_names
+    dest = getdest(typeof(y[1]), length(itr), array_factory, sel_cols)
+
+    _setrow(dest,1,y[1])
+
+    _collect_to_columns!(dest, itr, 2, y[2], sel_cols, errorhandling)
+end
+
+function _collect_to_columns!(dest::T, itr, offs, st, sel_cols, errorhandling) where {T<:NamedTuple}
+    i = offs
+    y = iterate(itr,st)
+    while y!==nothing
+        _setrow(dest,i,y[1])
+        i += 1
+        y = iterate(itr,y[2])
+    end
+
+    if sel_cols==:all
+        return collect(values(dest)), collect(keys(dest))
     else
-        return columns[sel_cols], column_names[sel_cols]
+        names_to_use = tuple((fieldname(T,i) for i in sel_cols)...)
+        r = NamedTuple{names_to_use}(dest)
+        return collect(values(r)), collect(keys(r))
+    end
+end
+
+function _collect_columns(itr, ::Base.SizeUnknown, array_factory, sel_cols, errorhandling)
+    y = iterate(itr)
+    y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory, sel_cols, errorhandling)
+    
+    if !(typeof(y[1])<:NamedTuple)
+        if errorhandling==:error
+            throw(ArgumentError("itr is not a table."))
+        elseif errorhandling==:returnvalue            
+            return nothing
+        end
+    end
+
+    dest = getdest(typeof(y[1]), 1, array_factory, sel_cols)
+    
+    _setrow(dest,1,y[1])
+
+    _grow_to_columns!(dest, itr, y[2], sel_cols, errorhandling)
+end
+
+function _grow_to_columns!(dest::T, itr, st, sel_cols, errorhandling) where {T<:NamedTuple}
+    y = iterate(itr, st)
+    while y!==nothing
+        _pushrow(dest, y[1])
+        y = iterate(itr,y[2])
+    end
+
+    if sel_cols==:all
+        return collect(values(dest)), collect(keys(dest))
+    else
+        names_to_use = tuple((fieldname(T,i) for i in sel_cols)...)
+        r = NamedTuple{names_to_use}(dest)
+        return collect(values(r)), collect(keys(r))
     end
 end
