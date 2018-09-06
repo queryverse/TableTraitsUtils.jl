@@ -18,8 +18,8 @@ include("test_source_without_length.jl")
 @test_throws ArgumentError TableTraitsUtils.create_columns_from_iterabletable(Iterators.filter(i->true, [1,2,3]), errorhandling=:error)
 @test TableTraitsUtils.create_columns_from_iterabletable(Iterators.filter(i->true, [1,2,3]), errorhandling=:returnvalue)===nothing
 
-@test create_columns_from_iterabletable(NamedTuple{(:a,:b),Tuple{Int,String}}[]) == (a=Int[], b=String[])
-@test create_columns_from_iterabletable((i for i in NamedTuple{(:a,:b),Tuple{Int,String}}[])) == (a=Int[], b=String[])
+@test create_columns_from_iterabletable(NamedTuple{(:a,:b),Tuple{Int,String}}[]) == (Any[Int[],String[]], [:a,:b])
+@test create_columns_from_iterabletable((i for i in NamedTuple{(:a,:b),Tuple{Int,String}}[])) == (Any[Int[],String[]], [:a,:b])
 
 @test_throws ArgumentError create_columns_from_iterabletable(Int[])
 @test_throws ArgumentError create_columns_from_iterabletable(Int[], errorhandling=:error)
