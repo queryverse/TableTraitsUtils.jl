@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.3.1 Release Notes
+* Fix bug in empty collection case
+
 # TableTraitsUtils.jl v0.3.0 Release Notes
 * Support unkonwn eltype sources
 
