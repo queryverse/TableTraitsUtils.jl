@@ -37,12 +37,14 @@ function collect_empty_columns(itr::T, ::Base.EltypeUnknown, array_factory, sel_
             return nothing
         end
     end
-    return getdest(S,0, array_factory, sel_cols)
+    dest = getdest(S,0, array_factory, sel_cols)
+    return collect(values(dest)), collect(keys(dest))
 end
 
 function collect_empty_columns(itr::T, ::Base.HasEltype, array_factory, sel_cols, errorhandling) where {T}
     if eltype(itr) <: NamedTuple
-        return getdest(eltype(itr),0, array_factory, sel_cols)
+        dest = getdest(eltype(itr),0, array_factory, sel_cols)
+        return collect(values(dest)), collect(keys(dest))
     else
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
