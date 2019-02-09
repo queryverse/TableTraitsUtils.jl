@@ -6,13 +6,19 @@ function create_columns_from_iterabletable(itr; sel_cols=:all, na_representation
     if TableTraits.isiterabletable(itr)===false
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
-        elseif errorhandling==:returnvalue            
+        elseif errorhandling==:returnvalue
             return nothing
         end
     else
 
         array_factory = if na_representation==:datavalue
-                (t,rows) -> Array{t}(undef, rows)
+                (t,rows) -> begin
+                    if t <: DataValue
+                        return DataValueArray{eltype(t)}(rows)
+                    else
+                        return Array{t}(undef, rows)
+                    end
+                end
             elseif na_representation==:missing
                 (t,rows) -> begin
                     if t <: DataValue
@@ -33,7 +39,7 @@ function collect_empty_columns(itr::T, ::Base.EltypeUnknown, array_factory, sel_
     if S == Union{} || !(S <: NamedTuple)
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
-        elseif errorhandling==:returnvalue            
+        elseif errorhandling==:returnvalue
             return nothing
         end
     end
@@ -48,7 +54,7 @@ function collect_empty_columns(itr::T, ::Base.HasEltype, array_factory, sel_cols
     else
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
-        elseif errorhandling==:returnvalue            
+        elseif errorhandling==:returnvalue
             return nothing
         end
     end
@@ -93,7 +99,7 @@ function _collect_columns(itr, ::Union{Base.HasShape, Base.HasLength}, array_fac
     if !(typeof(y[1])<:NamedTuple)
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
-        elseif errorhandling==:returnvalue            
+        elseif errorhandling==:returnvalue
             return nothing
         end
     end
@@ -126,17 +132,17 @@ end
 function _collect_columns(itr, ::Base.SizeUnknown, array_factory, sel_cols, errorhandling)
     y = iterate(itr)
     y===nothing && return collect_empty_columns(itr, Base.IteratorEltype(itr), array_factory, sel_cols, errorhandling)
-    
+
     if !(typeof(y[1])<:NamedTuple)
         if errorhandling==:error
             throw(ArgumentError("itr is not a table."))
-        elseif errorhandling==:returnvalue            
+        elseif errorhandling==:returnvalue
             return nothing
         end
     end
 
     dest = getdest(typeof(y[1]), 1, array_factory, sel_cols)
-    
+
     _setrow(dest,1,y[1])
 
     _grow_to_columns!(dest, itr, y[2], sel_cols, errorhandling)
