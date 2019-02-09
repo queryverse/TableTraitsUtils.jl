@@ -1,3 +1,6 @@
+# TableTraitsUtils.jl v0.4.0 Release Notes
+* Use DataValueArray for missing columns in collection stuff
+
 # TableTraitsUtils.jl v0.3.1 Release Notes
 * Fix bug in empty collection case
 
