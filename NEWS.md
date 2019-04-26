@@ -1,3 +1,7 @@
+# TableTraitsUtils.jl v1.0.0 Release Notes
+* Drop julia 0.7 support
+* Move to Project.toml
+
 # TableTraitsUtils.jl v0.4.0 Release Notes
 * Use DataValueArray for missing columns in collection stuff
 
