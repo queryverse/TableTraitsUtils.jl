@@ -72,7 +72,11 @@ end
     push_exprs = Expr(:block)
     for col_idx in 1:length(fieldnames(T))
         if fieldtype(TYPES, col_idx)!==Nothing
-            ex = :( dest[$col_idx][i] = el[$col_idx] )
+            if fieldtype(TYPES, col_idx) == Array{Any,1} && fieldtype(T, col_idx) == DataValue{Any}
+                ex = :( dest[$col_idx][i] = get(el[$col_idx], missing) )
+            else
+                ex = :( dest[$col_idx][i] = el[$col_idx] )
+            end
             push!(push_exprs.args, ex)
         end
     end
@@ -84,7 +88,11 @@ end
     push_exprs = Expr(:block)
     for col_idx in 1:length(fieldnames(T))
         if fieldtype(TYPES, col_idx)!==Nothing
-            ex = :( push!(dest[$col_idx], el[$col_idx]) )
+            if fieldtype(TYPES, col_idx) == Array{Any,1} && fieldtype(T, col_idx) == DataValue{Any}
+                ex = :( push!(dest[$col_idx], get(el[$col_idx], missing)) )
+            else
+                ex = :( push!(dest[$col_idx], el[$col_idx]) )
+            end
             push!(push_exprs.args, ex)
         end
     end
