@@ -50,6 +50,13 @@ columns23, names23 = TableTraitsUtils.create_columns_from_iterabletable(it, sel_
 @test names == names2 == names3
 @test names[2:3] == names23
 
+@test isequal(create_columns_from_iterabletable([(a=DataValue{Any}(), b=DataValue{Int}())], na_representation=:missing),
+    ([Any[missing], Union{Missing,Int}[missing]], [:a, :b])
+)
+
+@test create_columns_from_iterabletable([(a=DataValue{Any}(), b=DataValue{Int}())], na_representation=:datavalue) ==
+    ([DataValue{Any}[NA], DataValue{Int}[NA]], [:a, :b])
+
 it2 = TestSourceWithoutLength()
 
 columns4, names4 = TableTraitsUtils.create_columns_from_iterabletable(it2)
