@@ -14,7 +14,7 @@ function create_tableiterator(columns, names::Vector{Symbol})
     field_types = Type[]
     for i in eltype.(columns)
         if i >: Missing
-            push!(field_types, DataValue{Missings.T(i)})
+            push!(field_types, DataValue{Missings.nonmissingtype(i)})
         else
             push!(field_types, i)
         end
