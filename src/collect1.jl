@@ -1,5 +1,5 @@
 # Main entry point
-function create_columns_from_iterabletable(itr; sel_cols = :all, na_representation = :datavalue, errorhandling = :error)
+function create_columns_from_iterabletable(itr; sel_cols=:all, na_representation=:datavalue, errorhandling=:error)
     in(errorhandling, (:error, :returnvalue)) || throw(ArgumentError("'$errorhandling' is not a valid argument for errorhandling."))
     in(na_representation, (:datavalue, :missing)) || throw(ArgumentError("'$na_representation' is not a valid argument for na_representation."))
 
@@ -12,7 +12,7 @@ function create_columns_from_iterabletable(itr; sel_cols = :all, na_representati
     else
 
         array_factory = if na_representation == :datavalue
-            (t, rows)->begin
+            (t, rows) -> begin
                 if t <: DataValue
                     return DataValueArray{eltype(t)}(rows)
                 else
@@ -20,7 +20,7 @@ function create_columns_from_iterabletable(itr; sel_cols = :all, na_representati
                 end
             end
         elseif na_representation == :missing
-            (t, rows)->begin
+            (t, rows) -> begin
                 if t <: DataValue
                     return Array{Union{eltype(t),Missing}}(undef, rows)
                 else

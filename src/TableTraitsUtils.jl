@@ -28,7 +28,7 @@ end
 
 Base.eltype(::Type{TableIterator{T,TS}}) where {T,TS} = T
 
-@generated function Base.iterate(iter::TableIterator{T,TS}, state = 1) where {T,TS}
+@generated function Base.iterate(iter::TableIterator{T,TS}, state=1) where {T,TS}
     columns = map(1:length(TS.parameters)) do i
         if fieldtype(T, i) <: DataValue && eltype(TS.parameters[i]) >: Missing
             return :($(fieldtype(T, i))(iter.columns[$i][state]))
