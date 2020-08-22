@@ -7,7 +7,7 @@ end
 
 Base.IteratorSize(::Type{T}) where {T <: TestSourceWithoutLength} = Base.SizeUnknown()
 
-function Base.iterate(iter::TestSourceWithoutLength, state = 1)
+function Base.iterate(iter::TestSourceWithoutLength, state=1)
     if state == 1
         return (a = 1, b = 1.), 2
     elseif state == 2
