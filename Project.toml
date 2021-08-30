@@ -8,15 +8,15 @@ IteratorInterfaceExtensions = "82899510-4779-5014-852e-03e436cf321d"
 Missings = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
 TableTraits = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
 
+[compat]
+DataValues = "0.4.4"
+IteratorInterfaceExtensions = "0.1.1, 1"
+Missings = "0.4.2, 1"
+TableTraits = "0.3.1, 0.4, 1"
+julia = "1"
+
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
-
-[compat]
-DataValues = "0.4.4"
-IteratorInterfaceExtensions = "0.1.1, 1"
-Missings = "0.4.2"
-TableTraits = "0.3.1, 0.4, 1"
-julia = "1"
