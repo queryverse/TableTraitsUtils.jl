@@ -73,9 +73,9 @@ end
     for col_idx in 1:length(fieldnames(T))
         if fieldtype(TYPES, col_idx) !== Nothing
             if fieldtype(TYPES, col_idx) == Array{Any,1} && fieldtype(T, col_idx) == DataValue{Any}
-                ex = :( dest[$col_idx][i] = get(el[$col_idx], missing) )
+                ex = :(dest[$col_idx][i] = get(el[$col_idx], missing))
             else
-                ex = :( dest[$col_idx][i] = el[$col_idx] )
+                ex = :(dest[$col_idx][i] = el[$col_idx])
             end
             push!(push_exprs.args, ex)
         end
@@ -89,9 +89,9 @@ end
     for col_idx in 1:length(fieldnames(T))
         if fieldtype(TYPES, col_idx) !== Nothing
             if fieldtype(TYPES, col_idx) == Array{Any,1} && fieldtype(T, col_idx) == DataValue{Any}
-                ex = :( push!(dest[$col_idx], get(el[$col_idx], missing)) )
+                ex = :(push!(dest[$col_idx], get(el[$col_idx], missing)))
             else
-                ex = :( push!(dest[$col_idx], el[$col_idx]) )
+                ex = :(push!(dest[$col_idx], el[$col_idx]))
             end
             push!(push_exprs.args, ex)
         end
@@ -119,7 +119,7 @@ function _collect_columns(itr, ::Union{Base.HasShape,Base.HasLength}, array_fact
     _collect_to_columns!(dest, itr, 2, y[2], sel_cols, errorhandling)
 end
 
-function _collect_to_columns!(dest::T, itr, offs, st, sel_cols, errorhandling) where {T <: NamedTuple}
+function _collect_to_columns!(dest::T, itr, offs, st, sel_cols, errorhandling) where {T<:NamedTuple}
     i = offs
     y = iterate(itr, st)
     while y !== nothing
@@ -156,7 +156,7 @@ function _collect_columns(itr, ::Base.SizeUnknown, array_factory, sel_cols, erro
     _grow_to_columns!(dest, itr, y[2], sel_cols, errorhandling)
 end
 
-function _grow_to_columns!(dest::T, itr, st, sel_cols, errorhandling) where {T <: NamedTuple}
+function _grow_to_columns!(dest::T, itr, st, sel_cols, errorhandling) where {T<:NamedTuple}
     y = iterate(itr, st)
     while y !== nothing
         _pushrow(dest, y[1])
