@@ -1,10 +1,10 @@
 using Documenter, TableTraitsUtils
 
 makedocs(
-	modules=[TableTraitsUtils],
-	sitename="TableTraitsUtils.jl",
-	analytics="UA-132838790-1",
-	pages=[
+    modules=[TableTraitsUtils],
+    sitename="TableTraitsUtils.jl",
+    analytics="UA-132838790-1",
+    pages=[
         "Introduction" => "index.md"
     ]
 )
